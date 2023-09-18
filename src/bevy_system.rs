@@ -65,6 +65,17 @@ fn create_query_arg_path_segments(
     sig: &Signature,
 ) -> Result<Punctuated<PathSegment, PathSep>, TokenStream> {
     let mut query_arg_path_segments = Punctuated::<PathSegment, PathSep>::new();
+
+    query_arg_path_segments.push(PathSegment{
+        ident: Ident::new("bevy_ecs", Span::call_site()),
+        arguments: PathArguments::None
+    });
+
+    query_arg_path_segments.push(PathSegment{
+        ident: Ident::new("prelude", Span::call_site()),
+        arguments: PathArguments::None
+    });
+
     query_arg_path_segments.push(PathSegment {
         ident: Ident::new("Query", Span::call_site()),
         arguments: PathArguments::AngleBracketed(AngleBracketedGenericArguments {
