@@ -18,7 +18,7 @@ mod tests {
     use quote::ToTokens;
     use super::*;
     #[test]
-    fn test_me () {
+    fn parses_basic_struct () {
         let ts = TokenStream::from_str(
             "struct StructName {\
             a: i32\
@@ -28,7 +28,7 @@ mod tests {
         let struct_item = syn::parse2::<syn::ItemStruct>(ts).unwrap();
 
         let result = to_bevy_component(struct_item);
-        let a = result.into_token_stream().to_string();
-        println!("{}", a);
+        let _a = result.into_token_stream().to_string();
+        //println!("{}", a);
     }
 }

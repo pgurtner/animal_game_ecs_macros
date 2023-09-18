@@ -211,7 +211,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_me () {
+    fn parses_basic_function () {
         let ts = TokenStream::from_str(
             "#[animal_game_ecs_macros::system]
             fn fn_name (a: &A, b: &B, c: &mut C) {}"
@@ -220,7 +220,7 @@ mod tests {
         let item_fn = syn::parse2::<syn::ItemFn>(ts).unwrap();
 
         let result = create_fn_item(item_fn).unwrap();
-        let a = result.into_token_stream().to_string();
-        println!("{}", a);
+        let _a = result.into_token_stream().to_string();
+        //println!("{}", a);
     }
 }
