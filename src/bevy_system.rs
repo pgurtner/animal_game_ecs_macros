@@ -39,12 +39,17 @@ fn create_new_sig(sig: &Signature) -> Result<Signature, TokenStream> {
 
 fn create_new_args(sig: &Signature) -> Result<Punctuated<FnArg, Comma>, TokenStream> {
     let mut new_args = Punctuated::<FnArg, Comma>::new();
+
     new_args.push(FnArg::Typed(PatType {
         attrs: vec![],
         pat: Box::new(Pat::Ident(PatIdent {
             attrs: vec![],
             by_ref: None,
-            mutability: None,
+            mutability: if query_is_mutable(sig) {
+                Some(Default::default())
+            } else {
+                None
+            },
             subpat: None,
             ident: Ident::new("query", Span::call_site()),
         })),
@@ -173,18 +178,28 @@ fn create_new_loop(input: &ItemFn) -> Result<syn::ExprForLoop, TokenStream> {
 fn create_loop_pattern(sig: &Signature) -> Result<Punctuated<Pat, Comma>, TokenStream> {
     let mut for_pat_tuple_elems = Punctuated::<Pat, Comma>::new();
     for fn_arg in &sig.inputs {
-        for_pat_tuple_elems.push(extract_generic(&fn_arg)?);
+        for_pat_tuple_elems.push(extract_pattern(&fn_arg)?);
     }
 
     Ok(for_pat_tuple_elems)
 }
 
-fn extract_generic(fn_arg: &FnArg) -> Result<Pat, TokenStream> {
+fn extract_pattern(fn_arg: &FnArg) -> Result<Pat, TokenStream> {
     match fn_arg {
         FnArg::Receiver(rec) => Err(syn::Error::new(rec.self_token.span, "systems can't have a self parameter")
                 .into_compile_error(),
         ),
-        FnArg::Typed(typ) => Ok(*typ.pat.clone())
+        FnArg::Typed(typ) => match &(*typ.pat) {
+            Pat::Ident(ident) => Ok(Pat::Ident(PatIdent {
+                mutability: if fn_arg_is_mutable(&fn_arg) {
+                    Some(Default::default())
+                } else {
+                    None
+                },
+                ..ident.clone()
+            })),
+            _ => Ok(*typ.pat.clone())
+        }
     }
 }
 
@@ -200,18 +215,22 @@ fn create_loop_expr() -> Punctuated<PathSegment, PathSep> {
 
 fn query_is_mutable (sig: &Signature) -> bool {
     sig.inputs.iter().any(|fn_arg| {
-        match fn_arg {
-            FnArg::Receiver(_) => false,
-            FnArg::Typed(typed) => {
-                //todo it should work without the .clone()
-                return if let Type::Reference(refer) = *typed.ty.clone() {
-                    refer.mutability.is_some()
-                } else {
-                    false
-                }
+        fn_arg_is_mutable(fn_arg)
+    })
+}
+
+fn fn_arg_is_mutable (arg: &FnArg) -> bool {
+    match arg {
+        FnArg::Receiver(_) => false,
+        FnArg::Typed(typed) => {
+            //todo it should work without the .clone()
+            return if let Type::Reference(refer) = *typed.ty.clone() {
+                refer.mutability.is_some()
+            } else {
+                false
             }
         }
-    })
+    }
 }
 
 #[cfg(test)]
