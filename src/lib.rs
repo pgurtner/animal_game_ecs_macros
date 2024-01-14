@@ -4,6 +4,8 @@ use proc_macro::TokenStream;
 mod bevy_system;
 mod bevy_component;
 
+/// proc_macro adaptor for bevy_ecs components.
+/// Behaves like a no op. It just places a derive statement for bevy's component macro above the struct.
 #[proc_macro_attribute]
 pub fn to_bevy_component(
     _args: TokenStream,
@@ -39,10 +41,7 @@ pub fn to_bevy_component(
 pub fn to_bevy_system(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemFn);
 
-    let resulting_ts = match bevy_system::to_bevy_system_fn(input) {
-        Ok(ts) => ts,
-        Err(ts) => ts
-    };
+    let resulting_ts = bevy_system::to_bevy_system_fn(input).unwrap_or_else(|ts| ts);
 
     proc_macro::TokenStream::from(resulting_ts)
 }
